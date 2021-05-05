@@ -17,13 +17,12 @@ import boto3
 session = boto3.Session(profile_name='default')
 s3 = session.resource('s3')
 
-
-
 # Download latest data from Dylan Jay's repo
 
 def download_data_and_save(): 
   url = 'https://github.com/djay/covidthailand/wiki/combined.csv'
   s=requests.get(url).content
+  global df
   df=pd.read_csv(io.StringIO(s.decode('utf-8')), parse_dates= ['Date'])
   df.to_parquet(file_name, compression='UNCOMPRESSED')
   df.to_csv('jaydata.csv')
