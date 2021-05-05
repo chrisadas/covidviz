@@ -2,10 +2,6 @@
 
 > Generate single-image COVID dashboard for Thailand
 
-[![NPM Version][npm-image]][npm-url]
-[![Build Status][travis-image]][travis-url]
-[![Downloads Stats][npm-downloads]][npm-url]
-
 The script download [combined data](https://github.com/djay/covidthailand#combine-) from https://github.com/djay/covidthailand and generate plots that I personally want to see each day. No more, no less.
 
 ![Wide image](https://covidviz.s3-ap-southeast-1.amazonaws.com/full_figure.png)
