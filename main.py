@@ -156,7 +156,7 @@ if plot_upload == True:
 
 # narrow plot for mobile screen
 
-fig, axs = plt.subplots(6, 1, figsize=(6, 10.5), sharex=True)
+fig, axs = plt.subplots(6, 1, figsize=(6, 9.5), sharex=True)
 date_form = DateFormatter("%d-%b")
 fmt_month = mdates.MonthLocator()
 
