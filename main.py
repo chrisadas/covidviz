@@ -14,8 +14,8 @@ import seaborn as sns
 sns.set_style("darkgrid")
 import boto3
 
-plot_save = True
-plot_upload = False
+plot_save = False
+plot_upload = True
 last_updated = 0
 
 session = boto3.Session(profile_name='default')
