@@ -14,8 +14,13 @@ import seaborn as sns
 sns.set_style("darkgrid")
 import boto3
 
+plot_save = True
+plot_upload = False
+last_updated = 0
+
 session = boto3.Session(profile_name='default')
 s3 = session.resource('s3')
+file_name = 'jaydata.parquet'
 
 # Download latest data from Dylan Jay's repo
 
@@ -23,22 +28,22 @@ def download_data_and_save():
   url = 'https://github.com/djay/covidthailand/wiki/combined.csv'
   s=requests.get(url).content
   global df
+  global last_updated
   df=pd.read_csv(io.StringIO(s.decode('utf-8')), parse_dates= ['Date'])
   df.to_parquet(file_name, compression='UNCOMPRESSED')
   df.to_csv('jaydata.csv')
-  print("Files saved successfully.")
-
-file_name = 'jaydata.parquet'
+  last_updated = df['Date'][df.index[-1]].strftime("%d %B %Y")
+  print("Data downloaded and saved successfully. Data up to " + last_updated)
 
 try:
   file_time = path.getmtime(file_name)
   file_age = ((time.time() - file_time) / 3600) # in hours
   print("file age: " + f'{file_age:9.1f}')
-  if file_age > 6:
-    print("File older than 6 hours. Fetch updated file")
+  if file_age > 5.5:
+    print("File older than 5.5 hours. Try to download newer data.")
     download_data_and_save()
   else:
-    print("File less than 6 hours old. Load from local copy")
+    print("File less than 5.5 hours old. Load from local copy")
     df = pd.read_parquet('jaydata.parquet')
 except FileNotFoundError:
   download_data_and_save()
@@ -54,6 +59,7 @@ df = df.loc[datemask]
 df.set_index("Date", drop=False, inplace=True)
 
 last_updated = df['Date'][df.index[-1]].strftime("%d %B %Y")
+print(f"Latest data: {last_updated}")
 
 # Calculate Positive Rate
 
@@ -136,14 +142,19 @@ axs[2, 1].legend(loc='upper left')
 axs[0, 0].xaxis.set_major_locator(fmt_month)
 axs[0, 0].xaxis.set_major_formatter(date_form)
 
-fig.suptitle('Thailand COVID Situation Dashboard \n Data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
-# fig.savefig('full_figure.png')
+fig.suptitle('Thailand COVID data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
 
-canvas = FigureCanvas(fig) # renders figure onto canvas
-imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
-canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
-s3.Object('covidviz','full_figure.png').put(Body=imdata.getvalue(), ContentType='image/png') 
-s3.ObjectAcl('covidviz','full_figure.png').put(ACL='public-read')
+if plot_save == True:
+  fig.savefig('full_figure.png')
+
+if plot_upload == True:
+  canvas = FigureCanvas(fig) # renders figure onto canvas
+  imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
+  canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
+  s3.Object('covidviz','full_figure.png').put(Body=imdata.getvalue(), ContentType='image/png') 
+  s3.ObjectAcl('covidviz','full_figure.png').put(ACL='public-read')
+
+# narrow plot for mobile screen
 
 fig, axs = plt.subplots(6, 1, figsize=(6, 10.5), sharex=True)
 date_form = DateFormatter("%d-%b")
@@ -197,12 +208,16 @@ axs[5].legend(loc='upper left')
 axs[0].xaxis.set_major_locator(fmt_month)
 axs[0].xaxis.set_major_formatter(date_form)
 
-fig.suptitle('Thailand COVID Situation Dashboard \n Data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
-# fig.savefig('mobile_figure.png')
+fig.tight_layout()
+fig.subplots_adjust(top=0.9)
+fig.suptitle('Thailand COVID data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
 
-canvas = FigureCanvas(fig) # renders figure onto canvas
-imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
-canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
+if plot_save == True:
+  fig.savefig('mobile_figure.png')
 
-s3.Object('covidviz','mobile_figure.png').put(Body=imdata.getvalue(), ContentType='image/png') 
-s3.ObjectAcl('covidviz','mobile_figure.png').put(ACL='public-read')
+if plot_upload == True:
+  canvas = FigureCanvas(fig) # renders figure onto canvas
+  imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
+  canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
+  s3.Object('covidviz','mobile_figure.png').put(Body=imdata.getvalue(), ContentType='image/png') 
+  s3.ObjectAcl('covidviz','mobile_figure.png').put(ACL='public-read')
