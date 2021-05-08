@@ -1,3 +1,5 @@
+data:
+    begin_date: '2021-03-01'
 plot:
     plot_save: True
     plot_upload: False
