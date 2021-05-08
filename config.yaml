@@ -1,0 +1,5 @@
+plot:
+    plot_save: True
+    plot_upload: False
+freshness:
+    local_max_age: 2.5

@@ -2,6 +2,7 @@ import requests
 import io
 import os.path as path
 import time
+import yaml
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -14,17 +15,26 @@ import seaborn as sns
 sns.set_style("darkgrid")
 import boto3
 
-plot_save = False
-plot_upload = True
+# configuration
+
+with open("config.yaml", "r") as yamlfile:
+    cfg = yaml.safe_load(yamlfile)
+
+
+begin_date  = cfg["data"].get('begin_date')
+plot_save = cfg["plot"].get('plot_save')
+plot_upload = cfg["plot"].get('plot_upload')
+local_max_age = cfg["freshness"].get('local_max_age') # To  always download, set this to zero in config.yaml
+file_name = 'jaydata.parquet'
+
 last_updated = 0
 
 session = boto3.Session(profile_name='default')
 s3 = session.resource('s3')
-file_name = 'jaydata.parquet'
-
-# Download latest data from Dylan Jay's repo
 
 def download_data_and_save(): 
+  """Download latest data from djay's repo and save as CSV and parquet
+  """
   url = 'https://github.com/djay/covidthailand/wiki/combined.csv'
   s=requests.get(url).content
   global df
@@ -39,11 +49,11 @@ try:
   file_time = path.getmtime(file_name)
   file_age = ((time.time() - file_time) / 3600) # in hours
   print("file age: " + f'{file_age:9.1f}')
-  if file_age > 5.5:
-    print("File older than 5.5 hours. Try to download newer data.")
+  if file_age > local_max_age:
+    print(f"File older than {local_max_age} hours. Try to download newer data.")
     download_data_and_save()
   else:
-    print("File less than 5.5 hours old. Load from local copy")
+    print(f"File less than {local_max_age} hours old. Load from local copy")
     df = pd.read_parquet('jaydata.parquet')
 except FileNotFoundError:
   download_data_and_save()
@@ -54,7 +64,7 @@ except FileNotFoundError:
 # Uncomment to exclude today's data
 # yesterday = datetime.now() - timedelta(days=1)
 # datemask = (df['Date'] >= '2021-01-01') & (df['Date'] <= yesterday)
-datemask = (df['Date'] >= '2021-01-01')
+datemask = (df['Date'] >= begin_date)
 df = df.loc[datemask]
 df.set_index("Date", drop=False, inplace=True)
 
