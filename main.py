@@ -63,7 +63,7 @@ except FileNotFoundError:
 # Filter data excluding dates prior to 2021
 # Uncomment to exclude today's data
 # yesterday = datetime.now() - timedelta(days=1)
-# datemask = (df['Date'] >= '2021-01-01') & (df['Date'] <= yesterday)
+# datemask = (df['Date'] >= begin_date) & (df['Date'] <= yesterday)
 datemask = (df['Date'] >= begin_date)
 df = df.loc[datemask]
 df.set_index("Date", drop=False, inplace=True)
@@ -122,12 +122,14 @@ axs[0, 1].yaxis.set_major_formatter(ticker.EngFormatter())
 sns.lineplot(data=df, x="Date", y="Hospitalized", ax=axs[1,0])
 axs[1, 0].set_title('Number of People Hospitalized')
 axs[1, 0].set(ylabel="")
-axs[1,0].yaxis.set_major_formatter(ticker.EngFormatter())
+axs[1, 0].yaxis.set_major_formatter(ticker.EngFormatter())
 
 sns.lineplot(data=serious_df, x="Date", y="vals", hue="cols", legend="brief", ax=axs[1,1])
 axs[1, 1].set_title('Number of Serious Cases and Deaths')
 axs[1, 1].set(ylabel="")
 axs[1, 1].yaxis.set_major_formatter(ticker.EngFormatter())
+handles, labels = axs[1, 1].get_legend_handles_labels() # get labels
+axs[1, 1].legend(handles=handles[0:], labels=labels[0:]) # show all label except the first one (which is the title)
 
 # sns.lineplot(data=df, x="Date", y="Tested", ax=axs[2,0])
 # axs[2, 0].set_title('Daily Tests Administered')
@@ -147,7 +149,8 @@ axs[2, 1].stackplot(df['Date'], df['Vac Group Medical Staff 1 Cum'],
                                labels=['Medical Staff','Other Frontline Staff', 'Over 60', 'Risk: Disease', 'Risk: Location'])
 axs[2, 1].yaxis.set_major_formatter(ticker.EngFormatter())
 axs[2, 1].set_title("1st shot vaccine administered (cumulative)")
-axs[2, 1].legend(loc='upper left')
+handles, labels = axs[2, 1].get_legend_handles_labels()  # get legend labels
+axs[2, 1].legend(handles[::-1], labels[::-1], loc='upper left')  # reverse legend ordering to match chart
 
 axs[0, 0].xaxis.set_major_locator(fmt_month)
 axs[0, 0].xaxis.set_major_formatter(date_form)
@@ -194,6 +197,8 @@ sns.lineplot(data=serious_df, x="Date", y="vals", hue="cols", legend="brief", ax
 axs[3].set_title('Number of Serious Cases and Deaths')
 axs[3].set(ylabel="")
 axs[3].yaxis.set_major_formatter(ticker.EngFormatter())
+handles, labels = axs[3].get_legend_handles_labels() # get labels
+axs[3].legend(handles=handles[0:], labels=labels[0:]) # show all label except the first one (which is the title)
 
 # sns.lineplot(data=df, x="Date", y="Tested", ax=axs[2,0])
 # axs[2, 0].set_title('Daily Tests Administered')
@@ -213,7 +218,8 @@ axs[5].stackplot(df['Date'], df['Vac Group Medical Staff 1 Cum'],
                                labels=['Medical Staff','Other Frontline Staff', 'Over 60', 'Risk: Disease', 'Risk: Location'])
 axs[5].yaxis.set_major_formatter(ticker.EngFormatter())
 axs[5].set_title("1st shot vaccine administered (cumulative)")
-axs[5].legend(loc='upper left')
+handles, labels = axs[5].get_legend_handles_labels()  # get legend labels
+axs[5].legend(handles[::-1], labels[::-1], labelspacing=0.1, loc='upper left')  # reverse legend ordering to match chart
 
 axs[0].xaxis.set_major_locator(fmt_month)
 axs[0].xaxis.set_major_formatter(date_form)
