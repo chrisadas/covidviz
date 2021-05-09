@@ -92,6 +92,23 @@ col_to_ffill = ['Vac Group Medical Staff 1 Cum',
                 'Vac Given 2 Cum']
 df.loc[:,col_to_ffill] = df.loc[:,col_to_ffill].ffill()
 
+# Download limited data from API which may be updated slightly faster
+
+j = requests.get('https://covid19.th-stat.com/api/open/timeline').json()
+
+timeline_updated = datetime.strptime(j['UpdateDate'], '%d/%m/%Y %H:%M')
+
+timeline = pd.DataFrame.from_dict(j['Data'])
+timeline['Date'] = pd.to_datetime(timeline['Date'], format='%m/%d/%Y')
+
+# Merge data and use Recovered, Hospitalized, Deaths data from API instead
+df = df.drop(axis=1, labels=['Recovered', "Hospitalized", "Deaths"]).merge(timeline, left_index=True, right_on='Date', how='left')
+
+latest_new_confirmed = df['NewConfirmed'].iloc[-1]
+latest_test_administered = int(df['Tested'].dropna().iloc[-1])
+latest_hospitalized = int(df['Hospitalized'].dropna().iloc[-1])
+latest_deaths = int(df['NewDeaths'].dropna().iloc[-1])
+
 # Calculate daily vaccination administered
 
 df['Shot 1 Administered Daily'] = df['Vac Given 1 Cum'].diff()
@@ -104,23 +121,18 @@ fig, axs = plt.subplots(3, 2, figsize=(12,12), sharex=True)
 date_form = DateFormatter("%d-%b")
 fmt_month = mdates.MonthLocator()
 
-sns.lineplot(data=df, x="Date", y="Cases", ax=axs[0,0])
-axs[0, 0].set_title('Daily New Cases')
+sns.lineplot(data=df, x="Date", y="NewConfirmed", ax=axs[0,0])
+axs[0, 0].set_title(f'Daily New Cases: {latest_new_confirmed:,d}')
 axs[0, 0].set(ylabel="")
-axs[0,0].yaxis.set_major_formatter(ticker.EngFormatter())
-
-# sns.lineplot(data=df, x="Date", y="Positive Rate (7-day MA)", ax=axs[0,1])
-# axs[0, 1].set_title('% Tested and Positive (7-day MA)')
-# axs[0, 1].set(ylabel="")
-# axs[0,1].yaxis.set_major_formatter(ticker.PercentFormatter(decimals=1))
+axs[0, 0].yaxis.set_major_formatter(ticker.EngFormatter())
 
 sns.lineplot(data=df, x="Date", y="Tested", ax=axs[0,1])
-axs[0, 1].set_title('Daily Tests Administered')
+axs[0, 1].set_title(f'Daily Tests Administered: {latest_test_administered:,d}')
 axs[0, 1].set(ylabel="")
 axs[0, 1].yaxis.set_major_formatter(ticker.EngFormatter())
 
 sns.lineplot(data=df, x="Date", y="Hospitalized", ax=axs[1,0])
-axs[1, 0].set_title('Number of People Hospitalized')
+axs[1, 0].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
 axs[1, 0].set(ylabel="")
 axs[1, 0].yaxis.set_major_formatter(ticker.EngFormatter())
 
@@ -130,11 +142,7 @@ axs[1, 1].set(ylabel="")
 axs[1, 1].yaxis.set_major_formatter(ticker.EngFormatter())
 handles, labels = axs[1, 1].get_legend_handles_labels() # get labels
 axs[1, 1].legend(handles=handles[0:], labels=labels[0:]) # show all label except the first one (which is the title)
-
-# sns.lineplot(data=df, x="Date", y="Tested", ax=axs[2,0])
-# axs[2, 0].set_title('Daily Tests Administered')
-# axs[2, 0].set(ylabel="")
-# axs[2, 0].yaxis.set_major_formatter(ticker.EngFormatter())
+axs[1, 1].text(0.95, 0.05, f"{latest_deaths}", transform=axs[1, 1].transAxes)
 
 axs[2, 0].bar(df['Date'], df['Shot 1 Administered Daily'], 1, label='shot1')
 axs[2, 0].set_title('1st shot vaccine administered (daily)')
@@ -173,23 +181,18 @@ fig, axs = plt.subplots(6, 1, figsize=(6, 9.5), sharex=True)
 date_form = DateFormatter("%d-%b")
 fmt_month = mdates.MonthLocator()
 
-sns.lineplot(data=df, x="Date", y="Cases", ax=axs[0])
-axs[0].set_title('Daily New Cases')
+sns.lineplot(data=df, x="Date", y="NewConfirmed", ax=axs[0])
+axs[0].set_title(f'Daily New Cases: {latest_new_confirmed:,d}')
 axs[0].set(ylabel="")
 axs[0].yaxis.set_major_formatter(ticker.EngFormatter())
 
-# sns.lineplot(data=df, x="Date", y="Positive Rate (7-day MA)", ax=axs[0,1])
-# axs[0, 1].set_title('% Tested and Positive (7-day MA)')
-# axs[0, 1].set(ylabel="")
-# axs[0,1].yaxis.set_major_formatter(ticker.PercentFormatter(decimals=1))
-
 sns.lineplot(data=df, x="Date", y="Tested", ax=axs[1])
-axs[1].set_title('Daily Tests Administered')
+axs[1].set_title(f'Daily Tests Administered: {latest_test_administered:,d}')
 axs[1].set(ylabel="")
 axs[1].yaxis.set_major_formatter(ticker.EngFormatter())
 
 sns.lineplot(data=df, x="Date", y="Hospitalized", ax=axs[2])
-axs[2].set_title('Number of People Hospitalized')
+axs[2].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
 axs[2].set(ylabel="")
 axs[2].yaxis.set_major_formatter(ticker.EngFormatter())
 
@@ -199,6 +202,7 @@ axs[3].set(ylabel="")
 axs[3].yaxis.set_major_formatter(ticker.EngFormatter())
 handles, labels = axs[3].get_legend_handles_labels() # get labels
 axs[3].legend(handles=handles[0:], labels=labels[0:]) # show all label except the first one (which is the title)
+axs[3].text(0.95, 0.05, f"{latest_deaths}", transform=axs[3].transAxes)
 
 # sns.lineplot(data=df, x="Date", y="Tested", ax=axs[2,0])
 # axs[2, 0].set_title('Daily Tests Administered')
