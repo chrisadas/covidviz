@@ -104,7 +104,7 @@ timeline['Date'] = pd.to_datetime(timeline['Date'], format='%m/%d/%Y')
 # Merge data and use Recovered, Hospitalized, Deaths data from API instead
 df = df.drop(axis=1, labels=['Recovered', "Hospitalized", "Deaths"]).merge(timeline, left_index=True, right_on='Date', how='left')
 
-latest_new_confirmed = int(df['NewConfirmed'].iloc[-1])
+latest_new_confirmed = int(df['NewConfirmed'].dropna().iloc[-1])
 latest_test_administered = int(df['Tested'].dropna().iloc[-1])
 latest_hospitalized = int(df['Hospitalized'].dropna().iloc[-1])
 latest_deaths = int(df['NewDeaths'].dropna().iloc[-1])
