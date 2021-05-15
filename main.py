@@ -26,6 +26,7 @@ plot_save = cfg["plot"].get('plot_save')
 plot_upload = cfg["plot"].get('plot_upload')
 local_max_age = cfg["freshness"].get('local_max_age') # To  always download, set this to zero in config.yaml
 file_name = 'jaydata.parquet'
+hospitalized_breakdown_start = '2021-04-24'
 
 last_updated = 0
 
@@ -60,10 +61,6 @@ except FileNotFoundError:
 
 # Data Processing
 
-# Filter data excluding dates prior to 2021
-# Uncomment to exclude today's data
-# yesterday = datetime.now() - timedelta(days=1)
-# datemask = (df['Date'] >= begin_date) & (df['Date'] <= yesterday)
 datemask = (df['Date'] >= begin_date)
 df = df.loc[datemask]
 df.set_index("Date", drop=False, inplace=True)
@@ -77,9 +74,18 @@ df["Tests XLS (MA)"] = df["Tests XLS"].rolling(7, 1, center=True).mean()
 df["Pos XLS (MA)"] = df["Pos XLS"].rolling(7, 3, center=True).mean()
 df["Positive Rate (7-day MA)"] = df["Pos XLS (MA)"] / df["Tests XLS (MA)"] * 100
 
-# Dataframe for serious cases plotting
+# Capture latest numbers for chart titles
+
+latest_new_confirmed = int(df['Cases'].dropna().iloc[-1])
+latest_test_administered = int(df['Tested'].dropna().iloc[-1])
+latest_hospitalized = int(df['Hospitalized'].dropna().iloc[-1])
+latest_deaths = int(df['Deaths'].dropna().iloc[-1])
+
+# Dataframe for serious cases plotting and hospitalized breakdown
 
 serious_df = df[["Date", "Hospitalized Respirator", "Hospitalized Severe", "Deaths"]].melt('Date', var_name='cols', value_name='vals')
+df['Hospitalized'] = np.where(df['Date'] >= hospitalized_breakdown_start, 0, df['Hospitalized']) #only for visualization
+hospitalized_df = df[["Date", "Hospitalized", "Hospitalized Hospital", "Hospitalized Field"]].melt('Date', var_name='cols', value_name='vals')
 
 # Forward fill some cumulative numbers that have gaps in data
 
@@ -91,23 +97,6 @@ col_to_ffill = ['Vac Group Medical Staff 1 Cum',
                 'Vac Given 1 Cum',
                 'Vac Given 2 Cum']
 df.loc[:,col_to_ffill] = df.loc[:,col_to_ffill].ffill()
-
-# Download limited data from API which may be updated slightly faster
-
-j = requests.get('https://covid19.th-stat.com/api/open/timeline').json()
-
-timeline_updated = datetime.strptime(j['UpdateDate'], '%d/%m/%Y %H:%M')
-
-timeline = pd.DataFrame.from_dict(j['Data'])
-timeline['Date'] = pd.to_datetime(timeline['Date'], format='%m/%d/%Y')
-
-# Merge data and use Recovered, Hospitalized, Deaths data from API instead
-df = df.drop(axis=1, labels=['Recovered', "Hospitalized", "Deaths"]).merge(timeline, left_index=True, right_on='Date', how='left')
-
-latest_new_confirmed = int(df['NewConfirmed'].dropna().iloc[-1])
-latest_test_administered = int(df['Tested'].dropna().iloc[-1])
-latest_hospitalized = int(df['Hospitalized'].dropna().iloc[-1])
-latest_deaths = int(df['NewDeaths'].dropna().iloc[-1])
 
 # Calculate daily vaccination administered
 
@@ -121,20 +110,24 @@ fig, axs = plt.subplots(3, 2, figsize=(12,12), sharex=True)
 date_form = DateFormatter("%d-%b")
 fmt_month = mdates.MonthLocator()
 
-sns.lineplot(data=df, x="Date", y="NewConfirmed", ax=axs[0,0])
+axs[0, 0].bar(df['Date'], df['Cases'], 1, label='cases')
 axs[0, 0].set_title(f'Daily New Cases: {latest_new_confirmed:,d}')
 axs[0, 0].set(ylabel="")
 axs[0, 0].yaxis.set_major_formatter(ticker.EngFormatter())
 
-sns.lineplot(data=df, x="Date", y="Tested", ax=axs[0,1])
+axs[0, 1].bar(df['Date'], df['Tested'], 1, label='tested')
 axs[0, 1].set_title(f'Daily Tests Administered: {latest_test_administered:,d}')
 axs[0, 1].set(ylabel="")
 axs[0, 1].yaxis.set_major_formatter(ticker.EngFormatter())
 
-sns.lineplot(data=df, x="Date", y="Hospitalized", ax=axs[1,0])
-axs[1, 0].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
-axs[1, 0].set(ylabel="")
+axs[1, 0].stackplot(df['Date'], df['Hospitalized'], 
+                               df['Hospitalized Hospital'], 
+                               df['Hospitalized Field'],
+                               labels=['No Breakdown','Hospital', 'Field Hospital'])
 axs[1, 0].yaxis.set_major_formatter(ticker.EngFormatter())
+axs[1, 0].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
+handles, labels = axs[1, 0].get_legend_handles_labels()  # get legend labels
+axs[1, 0].legend(handles[::-1], labels[::-1], loc='upper left')  # reverse legend ordering to match chart
 
 sns.lineplot(data=serious_df, x="Date", y="vals", hue="cols", legend="brief", ax=axs[1,1])
 axs[1, 1].set_title('Number of Serious Cases and Deaths')
@@ -181,20 +174,24 @@ fig, axs = plt.subplots(6, 1, figsize=(6, 9.5), sharex=True)
 date_form = DateFormatter("%d-%b")
 fmt_month = mdates.MonthLocator()
 
-sns.lineplot(data=df, x="Date", y="NewConfirmed", ax=axs[0])
+axs[0].bar(df['Date'], df['Cases'], 1, label='cases')
 axs[0].set_title(f'Daily New Cases: {latest_new_confirmed:,d}')
 axs[0].set(ylabel="")
 axs[0].yaxis.set_major_formatter(ticker.EngFormatter())
 
-sns.lineplot(data=df, x="Date", y="Tested", ax=axs[1])
+axs[1].bar(df['Date'], df['Tested'], 1, label='tested')
 axs[1].set_title(f'Daily Tests Administered: {latest_test_administered:,d}')
 axs[1].set(ylabel="")
 axs[1].yaxis.set_major_formatter(ticker.EngFormatter())
 
-sns.lineplot(data=df, x="Date", y="Hospitalized", ax=axs[2])
-axs[2].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
-axs[2].set(ylabel="")
+axs[2].stackplot(df['Date'], df['Hospitalized'], 
+                               df['Hospitalized Hospital'], 
+                               df['Hospitalized Field'],
+                               labels=['No Breakdown','Hospital', 'Field Hospital'])
 axs[2].yaxis.set_major_formatter(ticker.EngFormatter())
+axs[2].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
+handles, labels = axs[2].get_legend_handles_labels()  # get legend labels
+axs[2].legend(handles[::-1], labels[::-1], loc='upper left')  # reverse legend ordering to match chart
 
 sns.lineplot(data=serious_df, x="Date", y="vals", hue="cols", legend="brief", ax=axs[3])
 axs[3].set_title('Number of Serious Cases and Deaths')
