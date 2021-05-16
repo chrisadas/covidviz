@@ -252,6 +252,7 @@ if plot_upload == True:
 vac_df = pd.read_parquet('vaccination.parquet')
 top10province = vac_df[vac_df['Date'] == '2021-05-13'].sort_values(by="Vac Given 1 Cum", ascending=False)['Province'][:10].values
 vac_df_top10 = vac_df[vac_df['Province'].isin(top10province)]
+vac_bkk_df = vac_df[vac_df['Province'] == "Bangkok"]
 
 fig, axs = plt.subplots(3, 1, figsize=(6, 9.5), sharex=True)
 
