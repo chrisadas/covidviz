@@ -44,6 +44,13 @@ def download_data_and_save():
   df.to_parquet(file_name, compression='UNCOMPRESSED')
   df.to_csv('jaydata.csv')
   last_updated = df['Date'][df.index[-1]].strftime("%d %B %Y")
+
+  url = 'https://raw.githubusercontent.com/wiki/djay/covidthailand/vaccinations.csv'
+  s=requests.get(url).content
+  global vac_df
+  vac_df=pd.read_csv(io.StringIO(s.decode('utf-8')), parse_dates= ['Date'])
+  vac_df.to_parquet('vaccination.parquet', compression='UNCOMPRESSED')
+
   print("Data downloaded and saved successfully. Data up to " + last_updated)
 
 try:
@@ -171,8 +178,6 @@ if plot_upload == True:
 # narrow plot for mobile screen
 
 fig, axs = plt.subplots(6, 1, figsize=(6, 9.5), sharex=True)
-date_form = DateFormatter("%d-%b")
-fmt_month = mdates.MonthLocator()
 
 axs[0].bar(df['Date'], df['Cases'], 1, label='cases')
 axs[0].set_title(f'Daily New Cases: {latest_new_confirmed:,d}')
@@ -238,3 +243,36 @@ if plot_upload == True:
   canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
   s3.Object('covidviz','mobile_figure.png').put(Body=imdata.getvalue(), ContentType='image/png') 
   s3.ObjectAcl('covidviz','mobile_figure.png').put(ACL='public-read')
+
+
+#
+# Vaccination Summary
+#
+
+vac_df = pd.read_parquet('vaccination.parquet')
+top10province = vac_df[vac_df['Date'] == '2021-05-13'].sort_values(by="Vac Given 1 Cum", ascending=False)['Province'][:10].values
+vac_df_top10 = vac_df[vac_df['Province'].isin(top10province)]
+
+fig, axs = plt.subplots(3, 1, figsize=(6, 9.5), sharex=True)
+
+sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 1 Cum", hue="Province", ax=axs[0])
+axs[0].set_title(f'Top 10 Most Vaccination Administered (1st shot)')
+axs[0].set(ylabel="")
+axs[0].yaxis.set_major_formatter(ticker.EngFormatter())
+
+axs[0].xaxis.set_major_locator(fmt_month)
+axs[0].xaxis.set_major_formatter(date_form)
+
+fig.tight_layout()
+fig.subplots_adjust(top=0.9)
+fig.suptitle('Thailand COVID Vaccination data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
+
+if plot_save == True:
+  fig.savefig('mobile_vaccination.png')
+
+if plot_upload == True:
+  canvas = FigureCanvas(fig) # renders figure onto canvas
+  imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
+  canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
+  s3.Object('covidviz','mobile_vaccination.png').put(Body=imdata.getvalue(), ContentType='image/png') 
+  s3.ObjectAcl('covidviz','mobile_vaccination.png').put(ACL='public-read')
