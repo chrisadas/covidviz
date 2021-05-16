@@ -258,7 +258,27 @@ fig, axs = plt.subplots(3, 1, figsize=(6, 9.5), sharex=True)
 sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 1 Cum", hue="Province", ax=axs[0])
 axs[0].set_title(f'Top 10 Most Vaccination Administered (1st shot)')
 axs[0].set(ylabel="")
+handles, labels = axs[0].get_legend_handles_labels()  # get legend labels
+axs[0].legend(handles[::1], labels[::1], loc='upper left')  # reverse legend ordering to match chart
 axs[0].yaxis.set_major_formatter(ticker.EngFormatter())
+
+sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 2 Cum", hue="Province", ax=axs[1])
+axs[1].set_title(f'Top 10 Most Vaccination Administered (2nd shot)')
+axs[1].set(ylabel="")
+handles, labels = axs[1].get_legend_handles_labels()  # get legend labels
+axs[1].legend(handles[::1], labels[::1], loc='upper left')  # reverse legend ordering to match chart
+axs[1].yaxis.set_major_formatter(ticker.EngFormatter())
+
+axs[2].stackplot(vac_bkk_df['Date'], vac_bkk_df['Vac Group Medical Staff 1 Cum'], 
+                               vac_bkk_df['Vac Group Other Frontline Staff 2 Cum'], 
+                               vac_bkk_df['Vac Group Over 60 1 Cum'], 
+                               vac_bkk_df['Vac Group Risk: Disease 1 Cum'], 
+                               vac_bkk_df['Vac Group Risk: Location 1 Cum'], 
+                               labels=['Medical Staff','Other Frontline Staff', 'Over 60', 'Risk: Disease', 'Risk: Location'])
+axs[2].yaxis.set_major_formatter(ticker.EngFormatter())
+axs[2].set_title("Bangkok 1st shot vaccine administered (cumulative)")
+handles, labels = axs[2].get_legend_handles_labels()  # get legend labels
+axs[2].legend(handles[::-1], labels[::-1], labelspacing=0.1, loc='upper left')  # reverse legend ordering to match chart
 
 axs[0].xaxis.set_major_locator(fmt_month)
 axs[0].xaxis.set_major_formatter(date_form)
