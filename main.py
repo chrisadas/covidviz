@@ -93,6 +93,7 @@ latest_deaths = int(df['Deaths'].dropna().iloc[-1])
 serious_df = df[["Date", "Hospitalized Respirator", "Hospitalized Severe", "Deaths"]].melt('Date', var_name='cols', value_name='vals')
 df['Hospitalized'] = np.where(df['Date'] >= hospitalized_breakdown_start, 0, df['Hospitalized']) #only for visualization
 hospitalized_df = df[["Date", "Hospitalized", "Hospitalized Hospital", "Hospitalized Field"]].melt('Date', var_name='cols', value_name='vals')
+df[['Hospitalized Hospital', 'Hospitalized Field']] = df[['Hospitalized Hospital','Hospitalized Field']].fillna(value=0)
 
 # Forward fill some cumulative numbers that have gaps in data
 
@@ -127,10 +128,9 @@ axs[0, 1].set_title(f'Daily Tests Administered: {latest_test_administered:,d}')
 axs[0, 1].set(ylabel="")
 axs[0, 1].yaxis.set_major_formatter(ticker.EngFormatter())
 
-axs[1, 0].stackplot(df['Date'], df['Hospitalized'], 
-                               df['Hospitalized Hospital'], 
-                               df['Hospitalized Field'],
-                               labels=['No Breakdown','Hospital', 'Field Hospital'])
+axs[1, 0].bar(df['Date'], df['Hospitalized'], 1, label="No Breakdown")
+axs[1, 0].bar(df['Date'], df['Hospitalized Hospital'], 1, label="Hospital")
+axs[1, 0].bar(df['Date'], df['Hospitalized Field'], 1, bottom=df['Hospitalized Hospital'], label="Field Hospital")
 axs[1, 0].yaxis.set_major_formatter(ticker.EngFormatter())
 axs[1, 0].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
 handles, labels = axs[1, 0].get_legend_handles_labels()  # get legend labels
@@ -189,10 +189,9 @@ axs[1].set_title(f'Daily Tests Administered: {latest_test_administered:,d}')
 axs[1].set(ylabel="")
 axs[1].yaxis.set_major_formatter(ticker.EngFormatter())
 
-axs[2].stackplot(df['Date'], df['Hospitalized'], 
-                               df['Hospitalized Hospital'], 
-                               df['Hospitalized Field'],
-                               labels=['No Breakdown','Hospital', 'Field Hospital'])
+axs[2].bar(df['Date'], df['Hospitalized'], 1, label="No Breakdown")
+axs[2].bar(df['Date'], df['Hospitalized Hospital'], 1, label="Hospital")
+axs[2].bar(df['Date'], df['Hospitalized Field'], 1, bottom=df['Hospitalized Hospital'], label="Field Hospital")
 axs[2].yaxis.set_major_formatter(ticker.EngFormatter())
 axs[2].set_title(f'Number of People Hospitalized: {latest_hospitalized:,d}')
 handles, labels = axs[2].get_legend_handles_labels()  # get legend labels
