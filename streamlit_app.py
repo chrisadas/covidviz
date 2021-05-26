@@ -29,6 +29,8 @@ def load_data():
     vac_data = pd.read_parquet('vaccination.parquet')
     return jay_data, vac_data
 
+st.set_page_config(page_title='Thailand COVID dashboard', initial_sidebar_state = 'auto')
+
 begin_date = st.sidebar.slider("Chart start date", 
                         value=datetime.date(2021, 3, 1),
                         format="DD-MM-YYYY", 
@@ -40,6 +42,8 @@ vac_date = st.sidebar.slider("Vaccination status date",
                         format="DD-MM-YYYY", 
                         min_value=datetime.date(2021, 3, 6),
                         max_value=datetime.date.today()).strftime("%Y-%m-%d")
+
+st.sidebar.text('Made with Streamlit\n by Chrisada Sookdhis (2021)')
 
 st.title('Thailand COVID Dashboard\n Data from https://github.com/djay/covidthailand')
 
@@ -118,7 +122,7 @@ st.bar_chart(df['Shot 1 Administered Daily'])
 
 st.subheader('Bangkok 1st shot vaccine administered (cumulative)')
 
-st.bar_chart(df[['Vac Group Risk: Location 1 Cum', 
+st.area_chart(df[['Vac Group Risk: Location 1 Cum', 
                 'Vac Group Risk: Disease 1 Cum',
                 'Vac Group Over 60 1 Cum',
                 'Vac Group Other Frontline Staff 1 Cum',
