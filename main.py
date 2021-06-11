@@ -63,6 +63,7 @@ try:
   else:
     print(f"File less than {local_max_age} hours old. Load from local copy")
     df = pd.read_parquet('jaydata.parquet')
+    vac_df = pd.read_parquet('vaccination.parquet')
 except FileNotFoundError:
   download_data_and_save()
 
@@ -248,51 +249,51 @@ if plot_upload == True:
 # Vaccination Summary
 #
 
-vac_df = pd.read_parquet('vaccination.parquet')
-top10province = vac_df[vac_df['Date'] == '2021-05-13'].sort_values(by="Vac Given 1 Cum", ascending=False)['Province'][:10].values
-vac_df_top10 = vac_df[vac_df['Province'].isin(top10province)]
-vac_bkk_df = vac_df[vac_df['Province'] == "Bangkok"]
+# vac_df = pd.read_parquet('vaccination.parquet')
+# top10province = vac_df[vac_df['Date'] == '2021-05-13'].sort_values(by="Vac Given 1 Cum", ascending=False)['Province'][:10].values
+# vac_df_top10 = vac_df[vac_df['Province'].isin(top10province)]
+# vac_bkk_df = vac_df[vac_df['Province'] == "Bangkok"]
 
-fig, axs = plt.subplots(3, 1, figsize=(6, 9.5), sharex=True)
+# fig, axs = plt.subplots(3, 1, figsize=(6, 9.5), sharex=True)
 
-sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 1 Cum", hue="Province", ax=axs[0])
-axs[0].set_title(f'Top 10 Most Vaccination Administered (1st shot)')
-axs[0].set(ylabel="")
-handles, labels = axs[0].get_legend_handles_labels()  # get legend labels
-axs[0].legend(handles[::1], labels[::1], loc='upper left')  # reverse legend ordering to match chart
-axs[0].yaxis.set_major_formatter(ticker.EngFormatter())
+# sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 1 Cum", hue="Province", ax=axs[0])
+# axs[0].set_title(f'Top 10 Most Vaccination Administered (1st shot)')
+# axs[0].set(ylabel="")
+# handles, labels = axs[0].get_legend_handles_labels()  # get legend labels
+# axs[0].legend(handles[::1], labels[::1], loc='upper left')  # reverse legend ordering to match chart
+# axs[0].yaxis.set_major_formatter(ticker.EngFormatter())
 
-sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 2 Cum", hue="Province", ax=axs[1])
-axs[1].set_title(f'Top 10 Most Vaccination Administered (2nd shot)')
-axs[1].set(ylabel="")
-handles, labels = axs[1].get_legend_handles_labels()  # get legend labels
-axs[1].legend(handles[::1], labels[::1], loc='upper left')  # reverse legend ordering to match chart
-axs[1].yaxis.set_major_formatter(ticker.EngFormatter())
+# sns.lineplot(data=vac_df_top10, x="Date", y="Vac Given 2 Cum", hue="Province", ax=axs[1])
+# axs[1].set_title(f'Top 10 Most Vaccination Administered (2nd shot)')
+# axs[1].set(ylabel="")
+# handles, labels = axs[1].get_legend_handles_labels()  # get legend labels
+# axs[1].legend(handles[::1], labels[::1], loc='upper left')  # reverse legend ordering to match chart
+# axs[1].yaxis.set_major_formatter(ticker.EngFormatter())
 
-axs[2].stackplot(vac_bkk_df['Date'], vac_bkk_df['Vac Group Medical Staff 1 Cum'], 
-                               vac_bkk_df['Vac Group Other Frontline Staff 2 Cum'], 
-                               vac_bkk_df['Vac Group Over 60 1 Cum'], 
-                               vac_bkk_df['Vac Group Risk: Disease 1 Cum'], 
-                               vac_bkk_df['Vac Group Risk: Location 1 Cum'], 
-                               labels=['Medical Staff','Other Frontline Staff', 'Over 60', 'Risk: Disease', 'Risk: Location'])
-axs[2].yaxis.set_major_formatter(ticker.EngFormatter())
-axs[2].set_title("Bangkok 1st shot vaccine administered (cumulative)")
-handles, labels = axs[2].get_legend_handles_labels()  # get legend labels
-axs[2].legend(handles[::-1], labels[::-1], labelspacing=0.1, loc='upper left')  # reverse legend ordering to match chart
+# axs[2].stackplot(vac_bkk_df['Date'], vac_bkk_df['Vac Group Medical Staff 1 Cum'], 
+#                                vac_bkk_df['Vac Group Other Frontline Staff 2 Cum'], 
+#                                vac_bkk_df['Vac Group Over 60 1 Cum'], 
+#                                vac_bkk_df['Vac Group Risk: Disease 1 Cum'], 
+#                                vac_bkk_df['Vac Group Risk: Location 1 Cum'], 
+#                                labels=['Medical Staff','Other Frontline Staff', 'Over 60', 'Risk: Disease', 'Risk: Location'])
+# axs[2].yaxis.set_major_formatter(ticker.EngFormatter())
+# axs[2].set_title("Bangkok 1st shot vaccine administered (cumulative)")
+# handles, labels = axs[2].get_legend_handles_labels()  # get legend labels
+# axs[2].legend(handles[::-1], labels[::-1], labelspacing=0.1, loc='upper left')  # reverse legend ordering to match chart
 
-axs[0].xaxis.set_major_locator(fmt_month)
-axs[0].xaxis.set_major_formatter(date_form)
+# axs[0].xaxis.set_major_locator(fmt_month)
+# axs[0].xaxis.set_major_formatter(date_form)
 
-fig.tight_layout()
-fig.subplots_adjust(top=0.9)
-fig.suptitle('Thailand COVID Vaccination data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
+# fig.tight_layout()
+# fig.subplots_adjust(top=0.9)
+# fig.suptitle('Thailand COVID Vaccination data up to ' + last_updated + '\n Data from https://github.com/djay/covidthailand')
 
-if plot_save == True:
-  fig.savefig('mobile_vaccination.png')
+# if plot_save == True:
+#   fig.savefig('mobile_vaccination.png')
 
-if plot_upload == True:
-  canvas = FigureCanvas(fig) # renders figure onto canvas
-  imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
-  canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
-  s3.Object('covidviz','mobile_vaccination.png').put(Body=imdata.getvalue(), ContentType='image/png') 
-  s3.ObjectAcl('covidviz','mobile_vaccination.png').put(ACL='public-read')
+# if plot_upload == True:
+#   canvas = FigureCanvas(fig) # renders figure onto canvas
+#   imdata = io.BytesIO() # prepares in-memory binary stream buffer (think of this as a txt file but purely in memory)
+#   canvas.print_png(imdata) # writes canvas object as a png file to the buffer. You can also use print_jpg, alternatively
+#   s3.Object('covidviz','mobile_vaccination.png').put(Body=imdata.getvalue(), ContentType='image/png') 
+#   s3.ObjectAcl('covidviz','mobile_vaccination.png').put(ACL='public-read')
